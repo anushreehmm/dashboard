@@ -1,0 +1,17 @@
+,,,,,,
+Report Name,iBUS-Lalit,,,,,
+Report Period,11-Sep-2024 00:00:00 - 11-Sep-2024 23:59:59 (GMT+5:30),,,,,
+Generated On,Thu Sep 12 14:58:38 2024,,,,,
+Title,iBUS-Lalit,,,,,
+Host Name,IP Address,Description,Node Alias,Availability(%),Latency(msec),Packet Loss(%)
+DVS-DEL-LALIT,14.140.9.58,,Lalit Delhi - Primary,99.59,40.65,0.47
+lalit-goa-L3switch,103.29.249.68,,Lalit Golf & Spa Resort Goa-L3-SW-Secondary,99.90,22.18,0.10
+Lalit Udaipur,103.193.255.114,,Lalit Laxmi Vilas - Secondary,100,58.94,0.05
+Lalit Mangar,103.194.88.42,,Lalit Mangar - Nas-Customer-Link,100,40.85,0
+lalit-kolkata,14.140.119.218,,Apollo Zipper India Limited(Lalit Kolkatta) - Primary,100,36.32,0
+Lalit Udaipur,183.87.215.59,,Lalit Laxmi Vilas - Primary,100,38.79,0
+14.140.113.26.static-Delhi-vsnl.net.in,14.140.113.26,,Kujjal Hotels P Ltd (The LaLit Chandigarh) - Primary,100,50.87,0
+iBUS_Lalit_Ashok,202.122.21.46,,Lalit Ashok - Secondary,100,1.89,0
+Lalit Srinagar,103.227.117.245,,Lalit Srinagar - Priamry NAS,100,53.72,0
+DVS-LALIT-GOA,103.129.111.122,,Lalit Golf & Spa Resort Goa- Primary-Customer-Link,100,37.40,0
+iBUS_Lalit_Ashok,202.122.21.126,,Lalit Ashok - Primary,100,1.73,0
