@@ -8,7 +8,7 @@ dash-table==5.0.0
 gunicorn==23.0.0
 jsonpointer==2.1
 mkl-service==2.4.1
-pandas==1.16.0
+pandas==1.5.0
 plotly==5.24.0
 protobuf==3.20.3
 pyasn1-modules==0.2.8
