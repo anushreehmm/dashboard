@@ -1,9 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[6]:
-
-
 import dash
 from dash import dcc, html
 import plotly.express as px
@@ -39,14 +33,9 @@ def clean_data(file_path):
     df = df.dropna(subset=['Packetloss(%)', 'Availability-%', 'Latency(msec)'])
     return df
 
-# Folder containing CSV files
-folder_path = r'C:\Users\AnushreeHM\Downloads\ibus'
-
-# Get list of all CSV files in the folder
-file_list = glob.glob(os.path.join(folder_path, '*.csv'))
-
 # Load and clean each file
-dataframes = [clean_data(file_path) for file_path in file_list]
+csv_files = ['file1.csv', 'file2.csv']
+dataframes = [clean_data(file) for file in csv_files]
 
 # Combine all DataFrames into one
 df = pd.concat(dataframes, ignore_index=True)
@@ -59,12 +48,12 @@ hostnames = df['Host_name'].unique()
 
 app.layout = dbc.Container(
     [
-        dbc.Row([
+        dbc.Row([ 
             dbc.Col(html.H1("Network Metrics Dashboard", style={"text-align": "center", "margin-top": "20px"}), width=12),
         ]),
-        dbc.Row([
-            dbc.Col([
-                html.Label("Filter by Host Name:", style={"margin-top": "20px"}),
+        dbc.Row([ 
+            dbc.Col([ 
+                html.Label("Filter by Host Name:", style={"margin-top": "20px"}), 
                 dcc.Dropdown(
                     id='hostname-dropdown',
                     options=[{'label': name, 'value': name} for name in hostnames],
@@ -75,23 +64,14 @@ app.layout = dbc.Container(
                 ),
             ], width=12),
         ]),
-        dbc.Row([
-            dbc.Col(
-                dcc.Graph(id='packet-loss-graph'), 
-                width=6
-            ),
-            dbc.Col(
-                dcc.Graph(id='latency-graph'), 
-                width=6
-            ),
+        dbc.Row([ 
+            dbc.Col(dcc.Graph(id='packet-loss-graph'), width=6), 
+            dbc.Col(dcc.Graph(id='latency-graph'), width=6),
         ], style={"margin-top": "30px"}),
-        dbc.Row([
-            dbc.Col(
-                dcc.Graph(id='availability-graph'), 
-                width=12
-            ),
+        dbc.Row([ 
+            dbc.Col(dcc.Graph(id='availability-graph'), width=12),
         ], style={"margin-top": "30px", "margin-bottom": "30px"}),
-    ], 
+    ],
     fluid=True
 )
 
@@ -182,11 +162,3 @@ def update_graphs(selected_hostnames):
 
 if __name__ == '__main__':
     app.run_server(debug=True, port=int(os.environ.get("PORT", 8080)))
-
-
-
-# In[ ]:
-
-
-
-
