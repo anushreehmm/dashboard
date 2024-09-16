@@ -1,0 +1,39 @@
+{
+
+    "service_agreements": {
+        "taj": {
+            "packet_loss_threshold": {
+                "critical": 20,
+                "warning": 10,
+                "caution": 3
+            },
+            "latency_threshold": {
+                "critical": 200,
+                "warning": 100,
+                "caution": 50
+            },
+            "availability_threshold": {
+                "critical": 50,
+                "warning": 80,
+                "caution": 90
+            }
+        },
+        "example_service": {
+            "packet_loss_threshold": {
+                "critical": 15,
+                "warning": 8,
+                "caution": 2
+            },
+            "latency_threshold": {
+                "critical": 180,
+                "warning": 90,
+                "caution": 40
+            },
+            "availability_threshold": {
+                "critical": 60,
+                "warning": 90,
+                "caution": 95
+            }
+        }
+    }
+}
