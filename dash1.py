@@ -15,7 +15,7 @@ with open('dash.json', 'r') as f:
 # Dash App setup
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
-# Layout with file upload and graph
+# Layout with file upload and multiple graphs
 app.layout = dbc.Container(
     [
         dbc.Row([ 
@@ -37,6 +37,10 @@ app.layout = dbc.Container(
                 ),
             ], width=12),
         ]),
+        dbc.Row([ 
+            dbc.Col(dcc.Graph(id='packet-loss-graph'), width=6), 
+            dbc.Col(dcc.Graph(id='latency-graph'), width=6),
+        ], style={"margin-top": "30px"}),  
         dbc.Row([ 
             dbc.Col(dcc.Graph(id='availability-graph'), width=12),
         ], style={"margin-top": "30px", "margin-bottom": "30px"}),
@@ -62,13 +66,15 @@ def clean_data(df):
     df = df.dropna(subset=['Packetloss(%)', 'Availability-%', 'Latency(msec)'])
     return df
 
-# Callback function to handle file upload and graph generation
+# Callback function to handle file upload and update all graphs
 @app.callback(
-    Output('availability-graph', 'figure'),
+    [Output('packet-loss-graph', 'figure'),
+     Output('latency-graph', 'figure'),
+     Output('availability-graph', 'figure')],
     Input('upload-csv', 'contents'),
     State('upload-csv', 'filename')
 )
-def update_graph(csv_content, filename):
+def update_graphs(csv_content, filename):
     if csv_content is not None:
         # Read CSV from uploaded file
         content_type, content_string = csv_content.split(',')
@@ -78,8 +84,30 @@ def update_graph(csv_content, filename):
         # Clean the data
         df = clean_data(df)
         
-        # Create Availability Graph
-        fig = px.bar(
+        # Packet Loss Graph
+        packet_loss_fig = px.bar(
+            df, x="Host_name", y="Packetloss(%)",
+            title="Packet Loss Percentage by Host Name",
+            labels={"Packetloss(%)": "Packet Loss (%)"},
+            template="plotly_dark",
+            color="Packetloss(%)",
+            color_continuous_scale=["green", "yellow", "orange", "red"],
+        )
+        packet_loss_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
+
+        # Latency Graph
+        latency_fig = px.bar(
+            df, x="Host_name", y="Latency(msec)",
+            title="Latency by Host Name",
+            labels={"Latency(msec)": "Latency (ms)"},
+            template="plotly_dark",
+            color="Latency(msec)",
+            color_continuous_scale=["green", "yellow", "orange", "red"],
+        )
+        latency_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
+
+        # Availability Graph
+        availability_fig = px.bar(
             df, x="Host_name", y="Availability-%",
             title="Availability by Host Name",
             labels={"Availability-%": "Availability (%)"},
@@ -87,11 +115,12 @@ def update_graph(csv_content, filename):
             color="Availability-%",
             color_continuous_scale=["red", "orange", "yellow", "green"],
         )
-        fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
+        availability_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
         
-        return fig
+        return packet_loss_fig, latency_fig, availability_fig
     
-    return {}
+    # Return empty graphs if no file is uploaded
+    return {}, {}, {}
 
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=8080)
