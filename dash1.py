@@ -26,7 +26,7 @@ app.layout = dbc.Container(
         ]),
         dbc.Row([ 
             dbc.Col([ 
-                html.Label("Upload CSV File:", style={"margin-top": "20px"}), 
+                html.Label("Upload CSV File:", html_for="upload-csv", style={"margin-top": "20px"}), 
                 dcc.Upload(
                     id='upload-csv',
                     children=html.Div(['Drag and Drop or ', html.A('Select a CSV File')]),
@@ -42,7 +42,7 @@ app.layout = dbc.Container(
         ]),
         dbc.Row([ 
             dbc.Col([ 
-                html.Label("Filter by Host Name:", style={"margin-top": "20px"}), 
+                html.Label("Filter by Host Name:", html_for="hostname-dropdown", style={"margin-top": "20px"}), 
                 dcc.Dropdown(
                     id='hostname-dropdown',
                     multi=True,
