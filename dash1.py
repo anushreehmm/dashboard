@@ -83,42 +83,54 @@ def clean_data(df):
     df = df.dropna(subset=['Packetloss(%)', 'Availability-%', 'Latency(msec)'])
     return df
 
-# Callback to handle file upload and update hostnames
+# Combined callback to handle file uploads, update dropdown, and update graphs
 @app.callback(
-    Output('hostname-dropdown', 'options'),
-    Input('upload-csv', 'contents'),
-    State('upload-csv', 'filename')
+    [
+        Output('hostname-dropdown', 'options'),
+        Output('packet-loss-graph', 'figure'),
+        Output('latency-graph', 'figure'),
+        Output('availability-graph', 'figure')
+    ],
+    [
+        Input('upload-csv', 'contents'),
+        Input('clear-data-btn', 'n_clicks')
+    ],
+    [
+        State('upload-csv', 'filename'),
+        State('hostname-dropdown', 'value')
+    ]
 )
-def update_hostnames(csv_content, filename):
+def update_dashboard(upload_csv_contents, clear_data_n_clicks, filenames, selected_hostnames):
     global uploaded_data
-    if csv_content is not None:
-        for content, name in zip(csv_content, filename):
+
+    # Handle file upload
+    if upload_csv_contents:
+        for content, name in zip(upload_csv_contents, filenames):
             content_type, content_string = content.split(',')
             decoded = base64.b64decode(content_string)
             df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+            print(f"Loaded data from {name}:")
+            print(df.head())
             cleaned_df = clean_data(df)
-            uploaded_data = pd.concat([uploaded_data, cleaned_df], ignore_index=True)  # Add cleaned data to global DataFrame
+            uploaded_data = pd.concat([uploaded_data, cleaned_df], ignore_index=True)
+            print(f"Data after cleaning: {uploaded_data.head()}")
 
-        # Get unique hostnames for the dropdown
+    # Handle clear data button
+    if clear_data_n_clicks:
+        uploaded_data = pd.DataFrame()  # Clear uploaded data
+        return [], {}, {}, {}
+
+    # Generate dropdown options
+    if not uploaded_data.empty:
         unique_hostnames = uploaded_data['Host_name'].unique()
+        dropdown_options = [{'label': hostname, 'value': hostname} for hostname in unique_hostnames]
+    else:
+        dropdown_options = []
 
-        return [{'label': hostname, 'value': hostname} for hostname in unique_hostnames]
-
-    return []
-
-# Callback to update graphs based on selected hostnames
-@app.callback(
-    [Output('packet-loss-graph', 'figure'),
-     Output('latency-graph', 'figure'),
-     Output('availability-graph', 'figure')],
-    Input('hostname-dropdown', 'value')
-)
-def update_graphs(selected_hostnames):
-    global uploaded_data
+    # Generate graphs
     if uploaded_data.empty or not selected_hostnames:
-        return {}, {}, {}
+        return dropdown_options, {}, {}, {}
 
-    # Filter data based on selected hostnames
     filtered_df = uploaded_data[uploaded_data['Host_name'].isin(selected_hostnames)]
 
     # Packet Loss Graph
@@ -153,23 +165,8 @@ def update_graphs(selected_hostnames):
         color_continuous_scale=["red", "orange", "yellow", "green"],
     )
     availability_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
-    
-    return packet_loss_fig, latency_fig, availability_fig
 
-# Callback to clear uploaded data and reset the graphs
-@app.callback(
-    [Output('packet-loss-graph', 'figure'),
-     Output('latency-graph', 'figure'),
-     Output('availability-graph', 'figure'),
-     Output('hostname-dropdown', 'options')],
-    Input('clear-data-btn', 'n_clicks')
-)
-def clear_uploaded_data(n_clicks):
-    global uploaded_data
-    if n_clicks:
-        uploaded_data = pd.DataFrame()  # Clear uploaded data
-        return {}, {}, {}, []
-    return {}, {}, {}, []
+    return dropdown_options, packet_loss_fig, latency_fig, availability_fig
 
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=8080)
