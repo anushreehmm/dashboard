@@ -16,7 +16,7 @@ with open('dash.json', 'r') as f:
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
 # Initialize a global variable to store uploaded CSV data
-uploaded_data = {}
+uploaded_data = pd.DataFrame()
 
 # Layout with file upload, dropdown, and multiple graphs
 app.layout = dbc.Container(
@@ -97,11 +97,10 @@ def update_hostnames(csv_content, filename):
             decoded = base64.b64decode(content_string)
             df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
             cleaned_df = clean_data(df)
-            uploaded_data[name] = cleaned_df  # Save cleaned data in global variable
+            uploaded_data = pd.concat([uploaded_data, cleaned_df], ignore_index=True)  # Add cleaned data to global DataFrame
 
         # Get unique hostnames for the dropdown
-        combined_df = pd.concat(uploaded_data.values(), ignore_index=True)
-        unique_hostnames = combined_df['Host_name'].unique()
+        unique_hostnames = uploaded_data['Host_name'].unique()
 
         return [{'label': hostname, 'value': hostname} for hostname in unique_hostnames]
 
@@ -116,12 +115,11 @@ def update_hostnames(csv_content, filename):
 )
 def update_graphs(selected_hostnames):
     global uploaded_data
-    if not uploaded_data or not selected_hostnames:
+    if uploaded_data.empty or not selected_hostnames:
         return {}, {}, {}
 
     # Filter data based on selected hostnames
-    combined_df = pd.concat(uploaded_data.values(), ignore_index=True)
-    filtered_df = combined_df[combined_df['Host_name'].isin(selected_hostnames)]
+    filtered_df = uploaded_data[uploaded_data['Host_name'].isin(selected_hostnames)]
 
     # Packet Loss Graph
     packet_loss_fig = px.bar(
@@ -169,7 +167,7 @@ def update_graphs(selected_hostnames):
 def clear_uploaded_data(n_clicks):
     global uploaded_data
     if n_clicks:
-        uploaded_data = {}  # Clear uploaded data
+        uploaded_data = pd.DataFrame()  # Clear uploaded data
         return {}, {}, {}, []
     return {}, {}, {}, []
 
