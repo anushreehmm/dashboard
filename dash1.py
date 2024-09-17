@@ -15,7 +15,10 @@ with open('dash.json', 'r') as f:
 # Dash App setup
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CYBORG])
 
-# Layout with file upload and multiple graphs
+# Initialize a global variable to store uploaded CSV data
+uploaded_data = {}
+
+# Layout with file upload, dropdown, and multiple graphs
 app.layout = dbc.Container(
     [
         dbc.Row([ 
@@ -33,7 +36,18 @@ app.layout = dbc.Container(
                         'borderRadius': '5px', 'textAlign': 'center', 
                         'margin': '10px'
                     },
-                    multiple=False
+                    multiple=True
+                ),
+            ], width=12),
+        ]),
+        dbc.Row([ 
+            dbc.Col([ 
+                html.Label("Filter by Host Name:", style={"margin-top": "20px"}), 
+                dcc.Dropdown(
+                    id='hostname-dropdown',
+                    multi=True,
+                    placeholder="Select Hostnames",
+                    style={"color": "#000"}
                 ),
             ], width=12),
         ]),
@@ -44,6 +58,9 @@ app.layout = dbc.Container(
         dbc.Row([ 
             dbc.Col(dcc.Graph(id='availability-graph'), width=12),
         ], style={"margin-top": "30px", "margin-bottom": "30px"}),
+        dbc.Row([ 
+            dbc.Col(dbc.Button("Clear Uploaded Data", id="clear-data-btn", color="danger", style={"margin-top": "20px"}), width=12),
+        ]),
     ],
     fluid=True
 )
@@ -66,61 +83,95 @@ def clean_data(df):
     df = df.dropna(subset=['Packetloss(%)', 'Availability-%', 'Latency(msec)'])
     return df
 
-# Callback function to handle file upload and update all graphs
+# Callback to handle file upload and update hostnames
+@app.callback(
+    Output('hostname-dropdown', 'options'),
+    Input('upload-csv', 'contents'),
+    State('upload-csv', 'filename')
+)
+def update_hostnames(csv_content, filename):
+    global uploaded_data
+    if csv_content is not None:
+        for content, name in zip(csv_content, filename):
+            content_type, content_string = content.split(',')
+            decoded = base64.b64decode(content_string)
+            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
+            cleaned_df = clean_data(df)
+            uploaded_data[name] = cleaned_df  # Save cleaned data in global variable
+
+        # Get unique hostnames for the dropdown
+        combined_df = pd.concat(uploaded_data.values(), ignore_index=True)
+        unique_hostnames = combined_df['Host_name'].unique()
+
+        return [{'label': hostname, 'value': hostname} for hostname in unique_hostnames]
+
+    return []
+
+# Callback to update graphs based on selected hostnames
 @app.callback(
     [Output('packet-loss-graph', 'figure'),
      Output('latency-graph', 'figure'),
      Output('availability-graph', 'figure')],
-    Input('upload-csv', 'contents'),
-    State('upload-csv', 'filename')
+    Input('hostname-dropdown', 'value')
 )
-def update_graphs(csv_content, filename):
-    if csv_content is not None:
-        # Read CSV from uploaded file
-        content_type, content_string = csv_content.split(',')
-        decoded = base64.b64decode(content_string)
-        df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-        
-        # Clean the data
-        df = clean_data(df)
-        
-        # Packet Loss Graph
-        packet_loss_fig = px.bar(
-            df, x="Host_name", y="Packetloss(%)",
-            title="Packet Loss Percentage by Host Name",
-            labels={"Packetloss(%)": "Packet Loss (%)"},
-            template="plotly_dark",
-            color="Packetloss(%)",
-            color_continuous_scale=["green", "yellow", "orange", "red"],
-        )
-        packet_loss_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
+def update_graphs(selected_hostnames):
+    global uploaded_data
+    if not uploaded_data or not selected_hostnames:
+        return {}, {}, {}
 
-        # Latency Graph
-        latency_fig = px.bar(
-            df, x="Host_name", y="Latency(msec)",
-            title="Latency by Host Name",
-            labels={"Latency(msec)": "Latency (ms)"},
-            template="plotly_dark",
-            color="Latency(msec)",
-            color_continuous_scale=["green", "yellow", "orange", "red"],
-        )
-        latency_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
+    # Filter data based on selected hostnames
+    combined_df = pd.concat(uploaded_data.values(), ignore_index=True)
+    filtered_df = combined_df[combined_df['Host_name'].isin(selected_hostnames)]
 
-        # Availability Graph
-        availability_fig = px.bar(
-            df, x="Host_name", y="Availability-%",
-            title="Availability by Host Name",
-            labels={"Availability-%": "Availability (%)"},
-            template="plotly_dark",
-            color="Availability-%",
-            color_continuous_scale=["red", "orange", "yellow", "green"],
-        )
-        availability_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
-        
-        return packet_loss_fig, latency_fig, availability_fig
+    # Packet Loss Graph
+    packet_loss_fig = px.bar(
+        filtered_df, x="Host_name", y="Packetloss(%)",
+        title="Packet Loss Percentage by Host Name",
+        labels={"Packetloss(%)": "Packet Loss (%)"},
+        template="plotly_dark",
+        color="Packetloss(%)",
+        color_continuous_scale=["green", "yellow", "orange", "red"],
+    )
+    packet_loss_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
+
+    # Latency Graph
+    latency_fig = px.bar(
+        filtered_df, x="Host_name", y="Latency(msec)",
+        title="Latency by Host Name",
+        labels={"Latency(msec)": "Latency (ms)"},
+        template="plotly_dark",
+        color="Latency(msec)",
+        color_continuous_scale=["green", "yellow", "orange", "red"],
+    )
+    latency_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
+
+    # Availability Graph
+    availability_fig = px.bar(
+        filtered_df, x="Host_name", y="Availability-%",
+        title="Availability by Host Name",
+        labels={"Availability-%": "Availability (%)"},
+        template="plotly_dark",
+        color="Availability-%",
+        color_continuous_scale=["red", "orange", "yellow", "green"],
+    )
+    availability_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
     
-    # Return empty graphs if no file is uploaded
-    return {}, {}, {}
+    return packet_loss_fig, latency_fig, availability_fig
+
+# Callback to clear uploaded data and reset the graphs
+@app.callback(
+    [Output('packet-loss-graph', 'figure'),
+     Output('latency-graph', 'figure'),
+     Output('availability-graph', 'figure'),
+     Output('hostname-dropdown', 'options')],
+    Input('clear-data-btn', 'n_clicks')
+)
+def clear_uploaded_data(n_clicks):
+    global uploaded_data
+    if n_clicks:
+        uploaded_data = {}  # Clear uploaded data
+        return {}, {}, {}, []
+    return {}, {}, {}, []
 
 if __name__ == '__main__':
     app.run_server(host='0.0.0.0', port=8080)
