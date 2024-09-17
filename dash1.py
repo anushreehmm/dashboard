@@ -147,16 +147,19 @@ def update_graphs(selected_hostnames):
 
     # Availability Graph
     availability_fig = px.bar(
-        filtered_df,
-        x="Host_name",
-        y="Availability-%",
-        title="Availability by Host Name",
-        labels={"Availability-%": "Availability (%)"},
-        template="plotly_dark",
-        color="Availability-%",
-        color_continuous_scale=["red", "orange", "yellow", "green"],
+    filtered_df,
+    x="Host_name",
+    y="Availability-%",
+    title="Availability by Host Name",
+    labels={"Availability-%": "Availability (%)"},
+    template="plotly_dark",
+    color="Availability-%",
+    color_continuous_scale=["red", "orange", "yellow", "green"],
     )
-    availability_fig.update_layout(margin={"l": 40, "r": 20, "t": 40, "b": 30})
+    availability_fig.update_layout(
+    margin={"l": 40, "r": 20, "t": 40, "b": 30},
+    yaxis=dict(range=[0, 100])  # Setting y-axis to range between 0 and 100
+    )
 
     return packet_loss_fig, latency_fig, availability_fig
 
