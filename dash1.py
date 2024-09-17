@@ -109,11 +109,8 @@ def update_dashboard(upload_csv_contents, clear_data_n_clicks, filenames, select
             content_type, content_string = content.split(',')
             decoded = base64.b64decode(content_string)
             df = pd.read_csv(io.StringIO(decoded.decode('utf-8')))
-            print(f"Loaded data from {name}:")
-            print(df.head())
             cleaned_df = clean_data(df)
             uploaded_data = pd.concat([uploaded_data, cleaned_df], ignore_index=True)
-            print(f"Data after cleaning: {uploaded_data.head()}")
 
     # Handle clear data button
     if clear_data_n_clicks:
